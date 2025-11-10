@@ -5,12 +5,17 @@ import { useThree, useFrame, ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { saveModelState, loadModelState } from "../../firebase/firestore";
 
+type Vec3 = { x: number; y: number; z: number };
+
 type DraggableProps = {
     children: React.ReactNode;
     modelId: string;
+    initialPosition?: Vec3;
+    initialRotation?: Vec3;
 };
 
-export default function Draggable({ children, modelId }: DraggableProps) {
+export default function Draggable({ children, modelId, initialPosition = { x: 0, y: 0, z: 0 },
+    initialRotation = { x: 0, y: 0, z: 0 }, }: DraggableProps) {
 
     const ref = useRef<THREE.Object3D>(null);
     const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
@@ -21,26 +26,23 @@ export default function Draggable({ children, modelId }: DraggableProps) {
     const [dragging, setDragging] = useState(false);
     const [rotating, setRotating] = useState(false);
 
-    // Load saved position on mount
+    // Load saved position on mount (ili fallback na initial*)
     useEffect(() => {
         async function loadState() {
             const data = await loadModelState(modelId);
-
-            if (data && data.position && data.rotation && ref.current) {
-                ref.current.position.set(
-                    data.position.x,
-                    data.position.y,
-                    data.position.z
-                );
-                ref.current.rotation.set(
-                    data.rotation.x,
-                    data.rotation.y,
-                    data.rotation.z
-                );
+            if (ref.current) {
+                if (data && data.position && data.rotation) {
+                    ref.current.position.set(data.position.x, data.position.y, data.position.z);
+                    ref.current.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+                } else {
+                    // Fallback ako dokument ne postoji
+                    ref.current.position.set(initialPosition.x, initialPosition.y, initialPosition.z);
+                    ref.current.rotation.set(initialRotation.x, initialRotation.y, initialRotation.z);
+                }
             }
         }
         loadState();
-    }, [modelId]);
+    }, [modelId, initialPosition, initialRotation]);
 
     const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
