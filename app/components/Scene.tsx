@@ -7,176 +7,214 @@ import React, { createContext, useRef, useState, useEffect } from "react";
 import Draggable from "./Draggable";
 import Model from "./Model";
 import { saveModelState } from "../../firebase/firestore";
+import { EffectComposer, Outline } from "@react-three/postprocessing";
 
-// ✅ Context za modele — Draggable ih čita
 export const ModelsContext = createContext<{
-  models: React.MutableRefObject<Record<string, THREE.Object3D | null>>;
+    models: React.MutableRefObject<Record<string, THREE.Object3D | null>>;
 }>({
-  models: { current: {} },
+    models: { current: {} },
 });
 
 function TopViewController({ topView }: { topView: boolean }) {
-  const { camera } = useThree();
+    const { camera } = useThree();
 
-  useEffect(() => {
-    if (topView) {
-      camera.position.set(0, 10, 0);
-      camera.up.set(0, 0, 1);
-      camera.lookAt(0, 0, 0);
-    } else {
-      camera.up.set(0, 1, 0);
-      camera.position.set(3, 3, 3);
-      camera.lookAt(0, 0, 0);
-    }
-  }, [topView, camera]);
+    useEffect(() => {
+        if (topView) {
+            camera.position.set(0, 10, 0);
+            camera.up.set(0, 0, 1);
+            camera.lookAt(0, 0, 0);
+        } else {
+            camera.up.set(0, 1, 0);
+            camera.position.set(3, 3, 3);
+            camera.lookAt(0, 0, 0);
+        }
+    }, [topView, camera]);
 
-  useFrame(() => {
-    if (topView) camera.lookAt(0, 0, 0);
-  });
+    useFrame(() => {
+        if (topView) camera.lookAt(0, 0, 0);
+    });
 
-  return null;
+    return null;
 }
 
 export default function Scene() {
-  const [topView, setTopView] = useState(false);
+    const [topView, setTopView] = useState(false);
 
-  // ✅ Globalni registry
-  const modelsRef = useRef<Record<string, THREE.Object3D | null>>({
-    duck: null,
-    duck2: null,
-  });
+    const modelsRef = useRef<Record<string, THREE.Object3D | null>>({
+        duck: null,
+        duck2: null,
+    });
 
-  // ✅ UI rotacija — mora se syncati nakon load-a
-  const [uiRot, setUiRot] = useState<Record<string, number>>({
-    duck: 0,
-    duck2: 0,
-  });
+    const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
 
-  const toDeg = (rad: number) => (rad * 180) / Math.PI;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const [uiRot, setUiRot] = useState<Record<string, number>>({
+        duck: 0,
+        duck2: 0,
+    });
 
-  // ✅ Koristi se kad Draggable javi “hej, učitao sam rotation iz Firestore”
-  const syncUiRotation = (id: string, radY: number) => {
-    setUiRot((s) => ({ ...s, [id]: Math.round(toDeg(radY)) }));
-  };
+    const toDeg = (rad: number) => (rad * 180) / Math.PI;
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
 
-  // ✅ UI → mijenja rotaciju modela
-  const setRotationYDeg = (id: string, deg: number) => {
-    const m = modelsRef.current[id];
-    if (!m) return;
+    const syncUiRotation = (id: string, radY: number) => {
+        setUiRot((s) => ({ ...s, [id]: Math.round(toDeg(radY)) }));
+    };
 
-    const normalized = ((deg % 360) + 360) % 360;
-    m.rotation.y = toRad(normalized);
+    const setRotationYDeg = (id: string, deg: number) => {
+        const m = modelsRef.current[id];
+        if (!m) return;
 
-    setUiRot((s) => ({ ...s, [id]: normalized }));
+        const normalized = ((deg % 360) + 360) % 360;
+        m.rotation.y = toRad(normalized);
 
-    saveModelState(
-      id,
-      { x: m.position.x, y: m.position.y, z: m.position.z },
-      { x: m.rotation.x, y: m.rotation.y, z: m.rotation.z }
-    );
-  };
+        setUiRot((s) => ({ ...s, [id]: normalized }));
 
-  return (
-    <ModelsContext.Provider value={{ models: modelsRef }}>
-      <div style={{ width: "100%", height: "100vh", background: "#111" }}>
-        <button
-          onClick={() => setTopView((v) => !v)}
-          style={{
-            position: "absolute",
-            top: 20,
-            left: 20,
-            padding: "10px 20px",
-            background: "#fff",
-            borderRadius: 6,
-            zIndex: 10,
-          }}
-        >
-          {topView ? "Switch to 3D View" : "Switch to Top View"}
-        </button>
+        saveModelState(
+            id,
+            { x: m.position.x, y: m.position.y, z: m.position.z },
+            { x: m.rotation.x, y: m.rotation.y, z: m.rotation.z }
+        );
+    };
 
-        {/* ✅ UI Panel */}
-        <div
-          style={{
-            position: "absolute",
-            top: 70,
-            left: 20,
-            padding: 12,
-            width: 280,
-            background: "rgba(0,0,0,0.6)",
-            borderRadius: 8,
-            color: "#fff",
-            zIndex: 10,
-          }}
-        >
-          <h4>Rotation Panel</h4>
+    return (
+        <ModelsContext.Provider value={{ models: modelsRef }}>
+            <div style={{ width: "100%", height: "100vh", background: "#111" }}>
+                <button
+                    onClick={() => setTopView((v) => !v)}
+                    style={{
+                        position: "absolute",
+                        top: 20,
+                        left: 20,
+                        padding: "10px 20px",
+                        background: "#fff",
+                        borderRadius: 6,
+                        zIndex: 10,
+                    }}
+                >
+                    {topView ? "Switch to 3D View" : "Switch to Top View"}
+                </button>
 
-          {["duck", "duck2"].map((id) => (
-            <div key={id} style={{ marginBottom: 20 }}>
-              <strong>{id}</strong>
+                <div
+                    style={{
+                        position: "absolute",
+                        top: 70,
+                        left: 20,
+                        padding: 16,
+                        width: 300,
+                        background: "rgba(0,0,0,0.6)",
+                        borderRadius: 10,
+                        color: "#fff",
+                        zIndex: 10,
+                        backdropFilter: "blur(6px)",
+                    }}
+                >
+                    <h4 style={{ marginBottom: 15, fontSize: 18 }}>Rotation Panel</h4>
 
-              <input
-                type="range"
-                min={0}
-                max={360}
-                value={uiRot[id]}
-                onChange={(e) => setRotationYDeg(id, Number(e.target.value))}
-                style={{ width: "100%", marginTop: 6 }}
-              />
+                    {["duck", "duck2"].map((id) => (
+                        <div
+                            key={id}
+                            style={{
+                                marginBottom: 20,
+                                padding: 12,
+                                borderRadius: 8,
+                                background: selectedModelId === id
+                                    ? "linear-gradient(135deg, rgba(0,170,255,0.2), rgba(0,50,80,0.25))"
+                                    : "rgba(255,255,255,0.03)",
 
-              <input
-                type="number"
-                min={0}
-                max={360}
-                value={uiRot[id]}
-                onChange={(e) => setRotationYDeg(id, Number(e.target.value))}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: 6,
-                  background: "#222",
-                  borderRadius: 6,
-                  border: "1px solid #555",
-                  color: "#fff",
-                }}
-              />
+                                border: selectedModelId === id
+                                    ? "1px solid rgba(0,170,255,0.6)"
+                                    : "1px solid rgba(255,255,255,0.1)",
+
+                                boxShadow: selectedModelId === id
+                                    ? "0 0 15px rgba(0,170,255,0.4)"
+                                    : "none",
+
+                                transition: "0.2s",
+                            }}
+                        >
+                            <strong
+                                style={{
+                                    fontSize: 16,
+                                    color: selectedModelId === id ? "#00aaff" : "#fff",
+                                }}
+                            >
+                                {id}
+                            </strong>
+
+                            <input
+                                type="range"
+                                min={0}
+                                max={360}
+                                value={uiRot[id]}
+                                onChange={(e) => setRotationYDeg(id, Number(e.target.value))}
+                                style={{ width: "100%", marginTop: 8 }}
+                            />
+
+                            <input
+                                type="number"
+                                min={0}
+                                max={360}
+                                value={uiRot[id]}
+                                onChange={(e) => setRotationYDeg(id, Number(e.target.value))}
+                                style={{
+                                    width: "100%",
+                                    marginTop: 8,
+                                    padding: 8,
+                                    background: "#222",
+                                    borderRadius: 6,
+                                    border: "1px solid #555",
+                                    color: "#fff",
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
+                    <TopViewController topView={topView} />
+                    <ambientLight intensity={0.5} />
+                    <directionalLight position={[5, 5, 5]} />
+                    <gridHelper args={[20, 20]} />
+
+                    <Draggable
+                        modelId="duck"
+                        selected={selectedModelId === "duck"}
+                        onSelect={setSelectedModelId}
+                        registerModel={(ref) => (modelsRef.current.duck = ref)}
+                        initialPosition={{ x: -2.5, y: 0, z: 0 }}
+                        onLoadRotation={(rad) => syncUiRotation("duck", rad)}
+                    >
+                        <Model path="/models/Duck.glb" />
+                    </Draggable>
+
+                    <Draggable
+                        modelId="duck2"
+                        selected={selectedModelId === "duck2"}
+                        onSelect={setSelectedModelId}
+                        registerModel={(ref) => (modelsRef.current.duck2 = ref)}
+                        initialPosition={{ x: 2.5, y: 0, z: 0 }}
+                        onLoadRotation={(rad) => syncUiRotation("duck2", rad)}
+                    >
+                        <Model path="/models/Duck.glb" />
+                    </Draggable>
+
+                    <OrbitControls
+                        enabled={!topView}
+                        enableRotate={!topView}
+                        enableZoom={!topView}
+                        enablePan={!topView}
+                    />
+
+                    <EffectComposer multisampling={4}>
+                        <Outline
+                            visibleEdgeColor={0x00aaff}
+                            hiddenEdgeColor={0x000000}
+                            edgeStrength={4}
+                            width={2}
+                            blur
+                        />
+                    </EffectComposer>
+                </Canvas>
             </div>
-          ))}
-        </div>
-
-        {/* ✅ Canvas */}
-        <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
-          <TopViewController topView={topView} />
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} />
-          <gridHelper args={[20, 20]} />
-
-          <Draggable
-            modelId="duck"
-            registerModel={(ref) => (modelsRef.current.duck = ref)}
-            initialPosition={{ x: -1.5, y: 0, z: 0 }}
-            onLoadRotation={(rad) => syncUiRotation("duck", rad)}
-          >
-            <Model path="/models/Duck.glb" />
-          </Draggable>
-
-          <Draggable
-            modelId="duck2"
-            registerModel={(ref) => (modelsRef.current.duck2 = ref)}
-            initialPosition={{ x: 1.5, y: 0, z: 0 }}
-            onLoadRotation={(rad) => syncUiRotation("duck2", rad)}
-          >
-            <Model path="/models/Duck.glb" />
-          </Draggable>
-
-          <OrbitControls
-            enabled={!topView}
-            enableRotate={!topView}
-            enableZoom={!topView}
-            enablePan={!topView}
-          />
-        </Canvas>
-      </div>
-    </ModelsContext.Provider>
-  );
+        </ModelsContext.Provider>
+    );
 }
