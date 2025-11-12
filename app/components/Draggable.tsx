@@ -76,6 +76,17 @@ export default function Draggable({
         })();
     }, [modelId]);
 
+    useEffect(() => {
+        const handlePointerUp = () => {
+            setDragging(false);
+            setRotating(false);
+        };
+
+        window.addEventListener("pointerup", handlePointerUp);
+        return () => window.removeEventListener("pointerup", handlePointerUp);
+    }, []);
+
+
     const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         onSelect?.(modelId);

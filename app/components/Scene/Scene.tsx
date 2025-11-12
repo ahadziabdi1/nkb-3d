@@ -111,7 +111,10 @@ export default function Scene() {
                         </div>
                     ))}
                 </div>
-                <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
+                <Canvas
+                    camera={{ position: [3, 3, 3], fov: 50 }}
+                    onPointerMissed={() => setSelectedModelId(null)}
+                >
                     <TopViewController topView={topView} />
 
                     <ambientLight intensity={0.6} />
@@ -149,12 +152,26 @@ export default function Scene() {
                         enableZoom={!topView}
                         enablePan={!topView}
                     />
+                    {/* 
+                    Optional enhancement:
+                        If you want the user to be able to zoom and pan in top-down view,
+                        replace the OrbitControls above with the one below:
 
+                    <OrbitControls
+                        enableRotate={!topView}
+                        enableZoom={true}
+                        enablePan={true}
+                        zoomSpeed={0.8}
+                        panSpeed={0.8}
+                    />
+
+                    This allows smoother UX while keeping rotation locked in top view.
+                    */}
                     <EffectComposer multisampling={4}>
                         <Outline
-                            visibleEdgeColor={0x00aaff}
+                            visibleEdgeColor={selectedModelId ? 0x00aaff : 0x000000}
                             hiddenEdgeColor={0x000000}
-                            edgeStrength={4}
+                            edgeStrength={selectedModelId ? 4 : 0}
                             width={2}
                             blur
                         />
