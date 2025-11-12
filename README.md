@@ -81,6 +81,6 @@ All requirements from **Task 1** are fulfilled:
 
 ---
 
-### 📁 Project Structure
+## 📁 Project Structure
 
 See `/app/components` for main logic and `/firebase` for database integration.
