@@ -4,10 +4,11 @@ import * as THREE from "three";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import React, { createContext, useRef, useState, useEffect } from "react";
-import Draggable from "./Draggable";
-import Model from "./Model";
+import Draggable from "../Draggable";
+import Model from "../Model";
 import { saveModelState } from "@/firebase/firestore";
 import { EffectComposer, Outline } from "@react-three/postprocessing";
+import styles from "./Scene.module.css";
 
 export const ModelsContext = createContext<{
     models: React.MutableRefObject<Record<string, THREE.Object3D | null>>;
@@ -77,106 +78,39 @@ export default function Scene() {
 
     return (
         <ModelsContext.Provider value={{ models: modelsRef }}>
-            <div
-                style={{
-                    width: "100%",
-                    height: "100vh",
-                    background: "#111",
-                    userSelect: "none",
-                }}
-            >
+            <div className={styles.container}>
                 <button
                     onClick={() => setTopView((v) => !v)}
-                    style={{
-                        position: "absolute",
-                        top: 20,
-                        left: 20,
-                        padding: "10px 20px",
-                        background: "#fff",
-                        borderRadius: 6,
-                        zIndex: 10,
-                        cursor: "pointer",
-                        border: "1px solid #ddd",
-                    }}
+                    className={styles.toggleBtn}
                 >
                     {topView ? "Switch to 3D View" : "Switch to Top View"}
                 </button>
-
-                <div
-                    style={{
-                        position: "absolute",
-                        top: 70,
-                        left: 20,
-                        padding: 16,
-                        width: 300,
-                        background: "rgba(0,0,0,0.6)",
-                        borderRadius: 10,
-                        color: "#fff",
-                        zIndex: 10,
-                        backdropFilter: "blur(6px)",
-                    }}
-                >
-                    <h4 style={{ marginBottom: 15, fontSize: 18 }}>Rotation Panel</h4>
-
+                <div className={styles.rotationPanel}>
+                    <h4>Rotation Panel</h4>
                     {["duck", "duck2"].map((id) => (
                         <div
                             key={id}
-                            style={{
-                                marginBottom: 20,
-                                padding: 12,
-                                borderRadius: 8,
-                                background:
-                                    selectedModelId === id
-                                        ? "linear-gradient(135deg, rgba(0,170,255,0.2), rgba(0,50,80,0.25))"
-                                        : "rgba(255,255,255,0.03)",
-                                border:
-                                    selectedModelId === id
-                                        ? "1px solid rgba(0,170,255,0.6)"
-                                        : "1px solid rgba(255,255,255,0.1)",
-                                boxShadow:
-                                    selectedModelId === id ? "0 0 15px rgba(0,170,255,0.4)" : "none",
-                                transition: "0.2s",
-                            }}
+                            className={`${styles.modelCard} ${selectedModelId === id ? styles.selected : ""
+                                }`}
                         >
-                            <strong
-                                style={{
-                                    fontSize: 16,
-                                    color: selectedModelId === id ? "#00aaff" : "#fff",
-                                }}
-                            >
-                                {id}
-                            </strong>
-
+                            <strong>{id}</strong>
                             <input
                                 type="range"
                                 min={0}
                                 max={360}
                                 value={uiRot[id]}
                                 onChange={(e) => setRotationYDeg(id, Number(e.target.value))}
-                                style={{ width: "100%", marginTop: 8 }}
                             />
-
                             <input
                                 type="number"
                                 min={0}
                                 max={360}
                                 value={uiRot[id]}
                                 onChange={(e) => setRotationYDeg(id, Number(e.target.value))}
-                                style={{
-                                    width: "100%",
-                                    marginTop: 8,
-                                    padding: 8,
-                                    background: "#222",
-                                    borderRadius: 6,
-                                    border: "1px solid #555",
-                                    color: "#fff",
-                                }}
                             />
                         </div>
                     ))}
-
                 </div>
-
                 <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
                     <TopViewController topView={topView} />
 

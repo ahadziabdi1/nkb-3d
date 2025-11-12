@@ -1,6 +1,6 @@
 "use client";
 
-import Scene from "./components/Scene";
+import Scene from "./components/Scene/Scene";
 
 export default function Page() {
   return (

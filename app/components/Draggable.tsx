@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useContext } from "react";
 import { useThree, useFrame, ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { saveModelState, loadModelState } from "@/firebase/firestore";
-import { ModelsContext } from "./Scene";
+import { ModelsContext } from "./Scene/Scene";
 import { Select } from "@react-three/postprocessing";
 
 type Vec3 = { x: number; y: number; z: number };
