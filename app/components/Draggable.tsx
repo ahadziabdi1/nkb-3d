@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { useThree, useFrame, ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { saveModelState, loadModelState } from "../../firebase/firestore";
+import { saveModelState, loadModelState } from "@/firebase/firestore";
 import { ModelsContext } from "./Scene";
 import { Select } from "@react-three/postprocessing";
 
@@ -54,13 +54,11 @@ export default function Draggable({
                     data.position.y,
                     data.position.z
                 );
-
                 ref.current.rotation.set(
                     data.rotation.x,
                     data.rotation.y,
                     data.rotation.z
                 );
-
                 onLoadRotation?.(ref.current.rotation.y);
             } else {
                 ref.current.position.set(
@@ -68,13 +66,11 @@ export default function Draggable({
                     initialPosition.y,
                     initialPosition.z
                 );
-
                 ref.current.rotation.set(
                     initialRotation.x,
                     initialRotation.y,
                     initialRotation.z
                 );
-
                 onLoadRotation?.(initialRotation.y);
             }
         })();
@@ -125,6 +121,8 @@ export default function Draggable({
     function intersects(a: THREE.Object3D, b: THREE.Object3D) {
         const boxA = new THREE.Box3().setFromObject(a);
         const boxB = new THREE.Box3().setFromObject(b);
+        boxA.expandByScalar(-0.005);
+        boxB.expandByScalar(-0.005);
         return boxA.intersectsBox(boxB);
     }
 
@@ -168,9 +166,7 @@ export default function Draggable({
             onPointerUp={onPointerUp}
             onContextMenu={(e) => e.stopPropagation()}
         >
-            <Select enabled={selected}>
-                {children}
-            </Select>
+            <Select enabled={selected}>{children}</Select>
         </group>
     );
 }

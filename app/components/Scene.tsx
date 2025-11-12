@@ -6,7 +6,7 @@ import { OrbitControls } from "@react-three/drei";
 import React, { createContext, useRef, useState, useEffect } from "react";
 import Draggable from "./Draggable";
 import Model from "./Model";
-import { saveModelState } from "../../firebase/firestore";
+import { saveModelState } from "@/firebase/firestore";
 import { EffectComposer, Outline } from "@react-three/postprocessing";
 
 export const ModelsContext = createContext<{
@@ -77,7 +77,14 @@ export default function Scene() {
 
     return (
         <ModelsContext.Provider value={{ models: modelsRef }}>
-            <div style={{ width: "100%", height: "100vh", background: "#111" }}>
+            <div
+                style={{
+                    width: "100%",
+                    height: "100vh",
+                    background: "#111",
+                    userSelect: "none",
+                }}
+            >
                 <button
                     onClick={() => setTopView((v) => !v)}
                     style={{
@@ -88,6 +95,8 @@ export default function Scene() {
                         background: "#fff",
                         borderRadius: 6,
                         zIndex: 10,
+                        cursor: "pointer",
+                        border: "1px solid #ddd",
                     }}
                 >
                     {topView ? "Switch to 3D View" : "Switch to Top View"}
@@ -116,18 +125,16 @@ export default function Scene() {
                                 marginBottom: 20,
                                 padding: 12,
                                 borderRadius: 8,
-                                background: selectedModelId === id
-                                    ? "linear-gradient(135deg, rgba(0,170,255,0.2), rgba(0,50,80,0.25))"
-                                    : "rgba(255,255,255,0.03)",
-
-                                border: selectedModelId === id
-                                    ? "1px solid rgba(0,170,255,0.6)"
-                                    : "1px solid rgba(255,255,255,0.1)",
-
-                                boxShadow: selectedModelId === id
-                                    ? "0 0 15px rgba(0,170,255,0.4)"
-                                    : "none",
-
+                                background:
+                                    selectedModelId === id
+                                        ? "linear-gradient(135deg, rgba(0,170,255,0.2), rgba(0,50,80,0.25))"
+                                        : "rgba(255,255,255,0.03)",
+                                border:
+                                    selectedModelId === id
+                                        ? "1px solid rgba(0,170,255,0.6)"
+                                        : "1px solid rgba(255,255,255,0.1)",
+                                boxShadow:
+                                    selectedModelId === id ? "0 0 15px rgba(0,170,255,0.4)" : "none",
                                 transition: "0.2s",
                             }}
                         >
@@ -167,14 +174,18 @@ export default function Scene() {
                             />
                         </div>
                     ))}
+
                 </div>
 
                 <Canvas camera={{ position: [3, 3, 3], fov: 50 }}>
                     <TopViewController topView={topView} />
-                    <ambientLight intensity={0.5} />
-                    <directionalLight position={[5, 5, 5]} />
+
+                    <ambientLight intensity={0.6} />
+                    <directionalLight position={[5, 7, 5]} intensity={0.8} />
+
                     <gridHelper args={[20, 20]} />
 
+                    {/* Model 1 */}
                     <Draggable
                         modelId="duck"
                         selected={selectedModelId === "duck"}
@@ -186,6 +197,7 @@ export default function Scene() {
                         <Model path="/models/Duck.glb" />
                     </Draggable>
 
+                    {/* Model 2 */}
                     <Draggable
                         modelId="duck2"
                         selected={selectedModelId === "duck2"}
